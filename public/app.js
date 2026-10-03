@@ -7,6 +7,7 @@ const VIEWS = ['attendance', 'people', 'stats'];
 const $ = (selector) => document.querySelector(selector);
 
 const state = {
+  user: null, // signed-in username
   view: 'attendance',
 
   // Monthly attendance sheet
@@ -142,10 +143,18 @@ async function api(method, url, body) {
   } catch {
     throw new Error('NETWORK');
   }
+  if (url !== '/api/login') checkSignedIn(res);
   if (res.status === 204) return null;
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'SERVER_ERROR');
   return data;
+}
+
+// A 401 means the session expired (or the password changed): go back to the login form.
+function checkSignedIn(res) {
+  if (res.status !== 401) return;
+  showLogin();
+  throw new Error('UNAUTHORIZED');
 }
 
 // Cells sent to the export endpoint: `value` is written to Excel, `text` is printed in the PDF.
@@ -173,6 +182,7 @@ async function downloadExport(format, spec, button) {
     } catch {
       throw new Error('NETWORK');
     }
+    checkSignedIn(res);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || 'SERVER_ERROR');
@@ -693,7 +703,62 @@ function exportStats(format, button) {
 const LOADERS = { attendance: loadSheet, people: loadPeople, stats: loadStats };
 const RENDERERS = { attendance: renderSheet, people: renderPeople, stats: renderStats };
 
+function showLogin() {
+  state.user = null;
+  // Forget everything loaded for the previous user.
+  Object.assign(state, { people: [], records: new Map(), stats: [], editingId: null });
+  $('.tabs').hidden = true;
+  $('#user-box').hidden = true;
+  for (const v of VIEWS) $(`#view-${v}`).hidden = true;
+  $('#login-password').value = '';
+  $('#login-error').hidden = true;
+  $('#view-login').hidden = false;
+  $('#login-username').focus();
+}
+
+function showApp(username) {
+  state.user = username;
+  $('#user-name').textContent = username;
+  $('#view-login').hidden = true;
+  $('.tabs').hidden = false;
+  $('#user-box').hidden = false;
+  showView(location.hash.slice(1));
+}
+
+async function signIn(event) {
+  event.preventDefault();
+  const errorBox = $('#login-error');
+  const button = event.submitter;
+  errorBox.hidden = true;
+  if (button) button.disabled = true;
+  try {
+    const { username } = await api('POST', '/api/login', {
+      username: $('#login-username').value,
+      password: $('#login-password').value,
+    });
+    $('#login-password').value = '';
+    showApp(username);
+  } catch (err) {
+    const key = `errors.${err.message}`;
+    errorBox.textContent = t(I18N.has(key) ? key : 'errors.SERVER_ERROR');
+    errorBox.hidden = false;
+    $('#login-password').select();
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function signOut() {
+  try {
+    await api('POST', '/api/logout', {});
+  } catch {
+    // Already signed out on the server: nothing else to do.
+  }
+  showLogin();
+}
+
 function showView(view) {
+  if (!state.user) return;
   state.view = VIEWS.includes(view) ? view : 'attendance';
   state.editingId = null;
   for (const v of VIEWS) $(`#view-${v}`).hidden = v !== state.view;
@@ -711,8 +776,12 @@ function bindEvents() {
 
   $('#lang-select').addEventListener('change', (e) => {
     I18N.setLang(e.target.value);
-    RENDERERS[state.view]();
+    if (state.user) RENDERERS[state.view]();
+    else $('#login-error').hidden = true; // its text belongs to the previous language
   });
+
+  $('#login-form').addEventListener('submit', signIn);
+  $('#logout').addEventListener('click', signOut);
 
   $('#att-month').addEventListener('change', (e) => setMonth(e.target.value));
   $('#att-prev').addEventListener('click', () => setMonth(shiftMonth(state.month, -1)));
@@ -753,7 +822,21 @@ function bindEvents() {
   window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
 }
 
+// Shows the app if a session is still open, the login form otherwise.
+async function start() {
+  try {
+    const res = await fetch('/api/session');
+    if (res.ok) {
+      showApp((await res.json()).username);
+      return;
+    }
+  } catch {
+    // Server unreachable: the login form will report it on submit.
+  }
+  showLogin();
+}
+
 $('#lang-select').value = I18N.lang;
 I18N.apply();
 bindEvents();
-showView(location.hash.slice(1));
+start();

@@ -9,20 +9,42 @@
 <body>
   <header class="topbar">
     <h1 class="brand" data-i18n="app.title"></h1>
-    <nav class="tabs" role="tablist">
+    <nav class="tabs" role="tablist" hidden>
       <button class="tab" role="tab" data-view="attendance" data-i18n="nav.attendance"></button>
       <button class="tab" role="tab" data-view="people" data-i18n="nav.people"></button>
       <button class="tab" role="tab" data-view="stats" data-i18n="nav.stats"></button>
     </nav>
-    <select id="lang-select" class="lang-select" data-i18n-aria-label="app.language">
-      <option value="fr">Français</option>
-      <option value="en">English</option>
-      <option value="zh-CN">中文</option>
-    </select>
+    <div class="top-right">
+      <select id="lang-select" class="lang-select" data-i18n-aria-label="app.language">
+        <option value="fr">Français</option>
+        <option value="en">English</option>
+        <option value="zh-CN">中文</option>
+      </select>
+      <div id="user-box" class="user-box" hidden>
+        <span id="user-name" class="user-name"></span>
+        <button type="button" id="logout" class="btn small" data-i18n="login.logout"></button>
+      </div>
+    </div>
   </header>
 
   <main>
-    <section id="view-attendance" class="view wide" role="tabpanel">
+    <section id="view-login" class="login-wrap" hidden>
+      <form id="login-form" class="login-card" novalidate>
+        <h2 data-i18n="login.title"></h2>
+        <label class="field">
+          <span data-i18n="login.username"></span>
+          <input id="login-username" name="username" autocomplete="username" maxlength="50" required>
+        </label>
+        <label class="field">
+          <span data-i18n="login.password"></span>
+          <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <p id="login-error" class="login-error" role="alert" hidden></p>
+        <button type="submit" class="btn primary" data-i18n="login.submit"></button>
+      </form>
+    </section>
+
+    <section id="view-attendance" class="view wide" role="tabpanel" hidden>
       <div class="toolbar">
         <div class="field">
           <label for="att-month" data-i18n="attendance.month"></label>

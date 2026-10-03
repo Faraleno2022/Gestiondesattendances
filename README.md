@@ -15,10 +15,28 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Ouvrez ensuite <http://localhost:3000>.
+Créez ensuite un compte de connexion (voir plus bas), puis ouvrez <http://localhost:3000>.
 
 - `PORT=8080 python app.py` change le port.
 - Les données sont enregistrées dans `data/attendance.db`. Pour sauvegarder, copiez ce fichier.
+
+## Comptes de connexion
+
+L'application est protégée par un identifiant et un mot de passe. Pour que personne ne puisse s'inscrire depuis Internet, les comptes se créent uniquement en ligne de commande, dans le dossier du projet avec l'environnement virtuel activé :
+
+```bash
+python users.py add NOM        # créer un compte (le mot de passe est demandé, 8 caractères minimum)
+python users.py passwd NOM     # changer un mot de passe (déconnecte ce compte partout)
+python users.py delete NOM     # supprimer un compte
+python users.py list           # lister les comptes
+```
+
+Sécurité :
+- les mots de passe sont enregistrés chiffrés (empreinte irréversible) ;
+- après 5 mots de passe erronés, le compte est bloqué 15 minutes ;
+- la session dure 12 heures ;
+- la clé qui signe les sessions est créée automatiquement dans `data/secret_key`. On peut aussi la fournir avec la variable `SECRET_KEY` ;
+- une fois le site en HTTPS, définissez `HTTPS_ONLY=1` pour que le cookie de session ne circule jamais en clair.
 
 ## Mettre en ligne sur PythonAnywhere
 
@@ -36,15 +54,19 @@ Ouvrez ensuite <http://localhost:3000>.
    - *Virtualenv* : `/home/VOTRE_COMPTE/Gestiondesattendances/.venv`
 4. Remplacer le contenu du **fichier WSGI** par :
    ```python
+   import os
    import sys
 
    path = "/home/VOTRE_COMPTE/Gestiondesattendances"
    if path not in sys.path:
        sys.path.insert(0, path)
 
+   os.environ["HTTPS_ONLY"] = "1"  # à ajouter une fois le HTTPS activé
+
    from app import app as application
    ```
-5. Cliquer sur **Reload**, puis activer le certificat HTTPS (Let's Encrypt) et *Force HTTPS*.
+5. **Console Bash** : créer le premier compte avec `python users.py add NOM`.
+6. Cliquer sur **Reload**, puis activer le certificat HTTPS (Let's Encrypt) et *Force HTTPS*.
 
 Mise à jour ultérieure : `cd ~/Gestiondesattendances && git pull`, puis **Reload** dans l'onglet Web.
 
@@ -86,8 +108,9 @@ Si aucune police n'est trouvée, le chinois utilise la police Adobe intégrée `
 ## Structure
 
 ```
-app.py            Serveur Flask : API REST et pages de l'interface
+app.py            Serveur Flask : API REST, connexion et pages de l'interface
 db.py             Base SQLite
+users.py          Gestion des comptes de connexion (ligne de commande)
 exports.py        Génération des fichiers PDF (ReportLab) et Excel (openpyxl)
 requirements.txt  Dépendances Python
 public/
@@ -99,8 +122,13 @@ public/
 
 ## API
 
+Toutes les adresses demandent d'être connecté, sauf `/api/login`. Sans session valide, elles répondent `401 UNAUTHORIZED`.
+
 | Méthode | URL | Rôle |
 |---|---|---|
+| POST | `/api/login` | Connexion `{ username, password }` |
+| GET | `/api/session` | Compte connecté |
+| POST | `/api/logout` | Déconnexion |
 | GET | `/api/people` | Liste des personnes |
 | POST | `/api/people` | Ajouter `{ matricule, name, jobTitle, service }` |
 | PUT | `/api/people/:id` | Modifier `{ matricule, name, jobTitle, service }` |

@@ -1,11 +1,16 @@
 """Attendance manager — Flask server (REST API + static front-end in public/)."""
 import os
 import re
+import secrets
+import threading
+import time
 from datetime import date as Date
+from datetime import timedelta
 from urllib.parse import quote
 
-from flask import Flask, Response, g, jsonify, request, send_from_directory
+from flask import Flask, Response, g, jsonify, request, send_from_directory, session
 from werkzeug.exceptions import HTTPException
+from werkzeug.security import check_password_hash, generate_password_hash
 
 import db
 import exports
@@ -13,10 +18,29 @@ import exports
 STATUSES = {"present", "absent", "late", "excused"}
 PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
 
-app = Flask(__name__, static_folder=PUBLIC_DIR, static_url_path="")
-app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # exports carry a whole month of data
-app.json.ensure_ascii = False  # keep accents and Chinese characters readable
+
+def load_secret_key():
+    """SECRET_KEY from the environment, otherwise a random key kept next to the database."""
+    if os.environ.get("SECRET_KEY"):
+        return os.environ["SECRET_KEY"]
+    key_file = db.DB_FILE.parent / "secret_key"
+    if not key_file.exists():
+        key_file.write_text(secrets.token_hex(32), encoding="utf-8")
+    return key_file.read_text(encoding="utf-8").strip()
+
+
 db.init()
+app = Flask(__name__, static_folder=PUBLIC_DIR, static_url_path="")
+app.secret_key = load_secret_key()
+app.config.update(
+    MAX_CONTENT_LENGTH=5 * 1024 * 1024,  # exports carry a whole month of data
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=12),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    # Set HTTPS_ONLY=1 once the site is served over HTTPS so the session cookie is never sent in clear.
+    SESSION_COOKIE_SECURE=os.environ.get("HTTPS_ONLY") == "1",
+)
+app.json.ensure_ascii = False  # keep accents and Chinese characters readable
 
 
 # The API answers with error *codes* only; the browser translates them into the user's language.
@@ -106,6 +130,85 @@ def with_unique_matricule(fn):
         return fn()
     except db.MatriculeTaken:
         raise ApiError(409, "MATRICULE_TAKEN") from None
+
+
+# --- Authentication ---------------------------------------------------------
+
+LOGIN_MAX_FAILURES = 5
+LOGIN_LOCK_SECONDS = 15 * 60
+# Compared against when the username does not exist, so both cases take the same time.
+DUMMY_HASH = generate_password_hash(secrets.token_hex(16))
+
+_failures = {}  # username → timestamps of recent failed logins (per worker process)
+_failures_lock = threading.Lock()
+
+
+def _recent_failures(username):
+    cutoff = time.time() - LOGIN_LOCK_SECONDS
+    with _failures_lock:
+        attempts = [t for t in _failures.get(username, []) if t > cutoff]
+        _failures[username] = attempts
+        return attempts
+
+
+def _record_failure(username):
+    with _failures_lock:
+        _failures.setdefault(username, []).append(time.time())
+
+
+def _session_marker(user):
+    # Changing the password changes the hash, which invalidates every existing session.
+    return user["password_hash"][-16:]
+
+
+@app.before_request
+def require_login():
+    if not request.path.startswith("/api/"):
+        return None  # the page itself holds no data; it shows the login form when needed
+    if request.method in ("POST", "PUT") and not request.is_json:
+        raise ApiError(400, "INVALID_JSON")  # blocks cross-site form submissions
+    if request.path == "/api/login":
+        return None
+    user = db.get_user(get_conn(), session.get("user_id") or 0)
+    if not user or session.get("marker") != _session_marker(user):
+        session.clear()
+        raise ApiError(401, "UNAUTHORIZED")
+    g.user = user
+    return None
+
+
+@app.post("/api/login")
+def login():
+    data = body()
+    username = parse_text(data.get("username"), 50).lower()
+    password = str(data.get("password") or "")
+    if len(_recent_failures(username)) >= LOGIN_MAX_FAILURES:
+        raise ApiError(429, "TOO_MANY_ATTEMPTS")
+
+    user = db.get_user_by_name(get_conn(), username)
+    valid = check_password_hash(user["password_hash"] if user else DUMMY_HASH, password)
+    if not (user and valid):
+        _record_failure(username)
+        raise ApiError(401, "INVALID_CREDENTIALS")
+
+    with _failures_lock:
+        _failures.pop(username, None)
+    session.clear()
+    session.permanent = True
+    session["user_id"] = user["id"]
+    session["marker"] = _session_marker(user)
+    return jsonify({"username": user["username"]})
+
+
+@app.get("/api/session")
+def current_session():
+    return jsonify({"username": g.user["username"]})
+
+
+@app.post("/api/logout")
+def logout():
+    session.clear()
+    return "", 204
 
 
 # --- Front-end --------------------------------------------------------------

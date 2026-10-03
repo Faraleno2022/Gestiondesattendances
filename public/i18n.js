@@ -11,6 +11,12 @@ const I18N = (() => {
       'app.title': 'Gestion des présences',
       'app.language': 'Langue',
 
+      'login.title': 'Connexion',
+      'login.username': 'Identifiant',
+      'login.password': 'Mot de passe',
+      'login.submit': 'Se connecter',
+      'login.logout': 'Déconnexion',
+
       'nav.attendance': 'Pointage',
       'nav.people': 'Personnel',
       'nav.stats': 'Statistiques',
@@ -80,6 +86,9 @@ const I18N = (() => {
       'stats.fileName': 'statistiques_presences',
       'stats.title': 'Statistiques de présence',
 
+      'errors.UNAUTHORIZED': 'Votre session a expiré. Veuillez vous reconnecter.',
+      'errors.INVALID_CREDENTIALS': 'Identifiant ou mot de passe incorrect.',
+      'errors.TOO_MANY_ATTEMPTS': 'Trop de tentatives. Réessayez dans 15 minutes.',
       'errors.NAME_REQUIRED': 'Le nom est obligatoire.',
       'errors.MATRICULE_TAKEN': 'Ce matricule est déjà attribué à une autre personne.',
       'errors.INVALID_DATE': 'Date invalide.',
@@ -96,6 +105,12 @@ const I18N = (() => {
     en: {
       'app.title': 'Attendance Manager',
       'app.language': 'Language',
+
+      'login.title': 'Sign in',
+      'login.username': 'Username',
+      'login.password': 'Password',
+      'login.submit': 'Sign in',
+      'login.logout': 'Sign out',
 
       'nav.attendance': 'Attendance',
       'nav.people': 'Staff',
@@ -165,6 +180,9 @@ const I18N = (() => {
       'stats.fileName': 'attendance_statistics',
       'stats.title': 'Attendance statistics',
 
+      'errors.UNAUTHORIZED': 'Your session has expired. Please sign in again.',
+      'errors.INVALID_CREDENTIALS': 'Incorrect username or password.',
+      'errors.TOO_MANY_ATTEMPTS': 'Too many attempts. Try again in 15 minutes.',
       'errors.NAME_REQUIRED': 'Name is required.',
       'errors.MATRICULE_TAKEN': 'This employee ID is already assigned to someone else.',
       'errors.INVALID_DATE': 'Invalid date.',
@@ -181,6 +199,12 @@ const I18N = (() => {
     'zh-CN': {
       'app.title': '考勤管理',
       'app.language': '语言',
+
+      'login.title': '登录',
+      'login.username': '用户名',
+      'login.password': '密码',
+      'login.submit': '登录',
+      'login.logout': '退出登录',
 
       'nav.attendance': '考勤登记',
       'nav.people': '员工',
@@ -250,6 +274,9 @@ const I18N = (() => {
       'stats.fileName': '考勤统计',
       'stats.title': '考勤统计',
 
+      'errors.UNAUTHORIZED': '登录已过期，请重新登录。',
+      'errors.INVALID_CREDENTIALS': '用户名或密码错误。',
+      'errors.TOO_MANY_ATTEMPTS': '尝试次数过多，请 15 分钟后再试。',
       'errors.NAME_REQUIRED': '姓名为必填项。',
       'errors.MATRICULE_TAKEN': '该工号已被其他员工使用。',
       'errors.INVALID_DATE': '日期无效。',

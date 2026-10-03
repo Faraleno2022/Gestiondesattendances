@@ -25,6 +25,13 @@ CREATE TABLE IF NOT EXISTS attendance (
 );
 
 CREATE INDEX IF NOT EXISTS attendance_date ON attendance(date);
+
+CREATE TABLE IF NOT EXISTS users (
+  id            INTEGER PRIMARY KEY,
+  username      TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  password_hash TEXT NOT NULL,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
 
 PERSON_COLUMNS = 'p.id, p.matricule, p.name, p.job_title AS jobTitle, p.service'
@@ -149,6 +156,35 @@ def set_attendance(conn, person_id, date, status, note=None):
 def set_attendance_bulk(conn, person_ids, date, status):
     with conn:
         conn.executemany(_UPSERT_STATUS, [(date, status, person_id) for person_id in person_ids])
+
+
+def get_user(conn, user_id):
+    row = conn.execute("SELECT id, username, password_hash FROM users WHERE id = ?", (user_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def get_user_by_name(conn, username):
+    row = conn.execute("SELECT id, username, password_hash FROM users WHERE username = ?", (username,)).fetchone()
+    return dict(row) if row else None
+
+
+def list_users(conn):
+    return _rows(conn.execute("SELECT username, created_at FROM users ORDER BY username"))
+
+
+def create_user(conn, username, password_hash):
+    with conn:
+        conn.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (username, password_hash))
+
+
+def set_password(conn, username, password_hash):
+    with conn:
+        return conn.execute("UPDATE users SET password_hash = ? WHERE username = ?", (password_hash, username)).rowcount > 0
+
+
+def delete_user(conn, username):
+    with conn:
+        return conn.execute("DELETE FROM users WHERE username = ?", (username,)).rowcount > 0
 
 
 def stats(conn, date_from, date_to):

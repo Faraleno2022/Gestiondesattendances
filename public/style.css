@@ -52,6 +52,10 @@ body {
   font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -103,8 +107,67 @@ body {
   font-weight: 600;
 }
 
-.lang-select {
+.top-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
   margin-left: auto;
+}
+
+.user-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-name {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* --- Login --- */
+
+.login-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 8vh 0 24px;
+}
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 360px;
+  padding: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.06);
+}
+
+.login-card h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.login-card .field {
+  font-size: 14px;
+}
+
+.login-card .btn {
+  margin-top: 4px;
+}
+
+.login-error {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+  font-size: 14px;
 }
 
 /* --- Layout --- */
