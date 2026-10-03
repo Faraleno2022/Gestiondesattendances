@@ -1,21 +1,52 @@
 # Gestion des présences · Attendance Manager · 考勤管理
 
 Petite application web de gestion des présences, disponible en **français**, **anglais** et **chinois**.
+Serveur en Python (Flask), base de données SQLite, interface en HTML/JavaScript.
 
-## Démarrer
+## Démarrer en local
 
-Prérequis : Node.js 22.13 ou plus récent. SQLite est intégré à Node, il n'y a rien d'autre à installer.
+Prérequis : Python 3.10 ou plus récent.
 
 ```bash
-npm install
-npm start
+python -m venv .venv
+.venv\Scripts\activate          # Windows
+source .venv/bin/activate       # macOS / Linux
+pip install -r requirements.txt
+python app.py
 ```
 
 Ouvrez ensuite <http://localhost:3000>.
 
-- `npm run dev` relance le serveur automatiquement à chaque modification du code.
-- `PORT=8080 npm start` change le port.
+- `PORT=8080 python app.py` change le port.
 - Les données sont enregistrées dans `data/attendance.db`. Pour sauvegarder, copiez ce fichier.
+
+## Mettre en ligne sur PythonAnywhere
+
+1. **Console Bash** : récupérer le code et créer l'environnement virtuel.
+   ```bash
+   git clone https://github.com/Faraleno2022/Gestiondesattendances.git
+   cd Gestiondesattendances
+   python3.12 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+2. **Onglet Web** → *Add a new web app* → votre domaine → **Manual configuration** → Python 3.12.
+3. Renseigner :
+   - *Source code* et *Working directory* : `/home/VOTRE_COMPTE/Gestiondesattendances`
+   - *Virtualenv* : `/home/VOTRE_COMPTE/Gestiondesattendances/.venv`
+4. Remplacer le contenu du **fichier WSGI** par :
+   ```python
+   import sys
+
+   path = "/home/VOTRE_COMPTE/Gestiondesattendances"
+   if path not in sys.path:
+       sys.path.insert(0, path)
+
+   from app import app as application
+   ```
+5. Cliquer sur **Reload**, puis activer le certificat HTTPS (Let's Encrypt) et *Force HTTPS*.
+
+Mise à jour ultérieure : `cd ~/Gestiondesattendances && git pull`, puis **Reload** dans l'onglet Web.
 
 ## Fonctionnalités
 
@@ -39,24 +70,32 @@ Le serveur renvoie uniquement des codes d'erreur (`NAME_REQUIRED`…). C'est le 
 
 **Ajouter une langue** : ajoutez un bloc dans `MESSAGES` et son code dans `LANGS` (fichier `public/i18n.js`), puis une `<option>` dans le sélecteur de `public/index.html`.
 
+## Exports PDF et Excel
+
+Les fichiers sont générés par le serveur (ReportLab pour le PDF, openpyxl pour Excel) avec les données affichées à l'écran, filtres et recherche compris.
+
+Pour afficher le chinois, le PDF intègre une police chinoise. Il la cherche dans cet ordre :
+
+1. la variable d'environnement `PDF_FONT` (et éventuellement `PDF_FONT_BOLD`) : chemin d'un fichier `.ttf` ou `.ttc` ;
+2. un fichier `.ttf` ou `.ttc` déposé dans le dossier `fonts/` du projet ;
+3. les polices du système : Microsoft YaHei ou SimSun sous Windows, WenQuanYi, AR PL ou Droid Sans Fallback sous Linux.
+
+Seules les polices à contours TrueType conviennent ; les polices OpenType/CFF comme Noto Sans CJK ne fonctionnent pas avec ReportLab.
+Si aucune police n'est trouvée, le chinois utilise la police Adobe intégrée `STSong-Light`, que certains lecteurs PDF n'affichent pas.
+
 ## Structure
 
 ```
-server.js         API REST (Express)
-db.js             Base SQLite (node:sqlite)
-export.js         Génération des fichiers PDF (PDFKit) et Excel (ExcelJS)
+app.py            Serveur Flask : API REST et pages de l'interface
+db.py             Base SQLite
+exports.py        Génération des fichiers PDF (ReportLab) et Excel (openpyxl)
+requirements.txt  Dépendances Python
 public/
   index.html      Interface
   app.js          Logique de l'interface
   i18n.js         Traductions FR / EN / 中文
   style.css       Styles (thème clair et sombre)
 ```
-
-## Exports PDF et Excel
-
-Les fichiers sont générés par le serveur avec les données affichées à l'écran (filtres et recherche compris).
-Pour afficher le chinois, le PDF utilise une police chinoise du système : Microsoft YaHei sous Windows, PingFang sous macOS, Noto Sans CJK ou WenQuanYi sous Linux.
-Pour en choisir une autre, définissez la variable `PDF_FONT` (et éventuellement `PDF_FONT_BOLD`) avec le chemin d'un fichier .ttf ou .otf.
 
 ## API
 
@@ -70,6 +109,6 @@ Pour en choisir une autre, définissez la variable `PDF_FONT` (et éventuellemen
 | PUT | `/api/attendance` | Enregistrer `{ date, personId, status }` (`status: null` pour effacer, `note` facultatif) |
 | PUT | `/api/attendance/bulk` | Enregistrer `{ date, personIds, status }` pour plusieurs personnes |
 | GET | `/api/stats?from=…&to=…` | Bilan par personne sur la période |
-| POST | `/api/export/pdf`, `/api/export/xlsx` | Génère un fichier à partir d'un tableau décrit par l'interface (voir `export.js`) |
+| POST | `/api/export/pdf`, `/api/export/xlsx` | Génère un fichier à partir d'un tableau décrit par l'interface (voir `exports.py`) |
 
 Valeurs possibles pour `status` : `present`, `absent`, `late`, `excused`.
