@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestion des présences</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="brand" data-i18n="app.title"></h1>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-view="attendance" data-i18n="nav.attendance"></button>
+      <button class="tab" role="tab" data-view="people" data-i18n="nav.people"></button>
+      <button class="tab" role="tab" data-view="stats" data-i18n="nav.stats"></button>
+    </nav>
+    <select id="lang-select" class="lang-select" data-i18n-aria-label="app.language">
+      <option value="fr">Français</option>
+      <option value="en">English</option>
+      <option value="zh-CN">中文</option>
+    </select>
+  </header>
+
+  <main>
+    <section id="view-attendance" class="view wide" role="tabpanel">
+      <div class="toolbar">
+        <div class="field">
+          <label for="att-month" data-i18n="attendance.month"></label>
+          <div class="month-nav">
+            <button type="button" id="att-prev" class="btn icon" data-i18n-aria-label="attendance.prevMonth">‹</button>
+            <input type="month" id="att-month" required>
+            <button type="button" id="att-next" class="btn icon" data-i18n-aria-label="attendance.nextMonth">›</button>
+          </div>
+        </div>
+        <button type="button" id="att-this-month" class="btn" data-i18n="attendance.thisMonth"></button>
+        <label class="field">
+          <span data-i18n="common.service"></span>
+          <select id="att-service"></select>
+        </label>
+        <label class="field grow">
+          <span class="sr-only" data-i18n="common.search"></span>
+          <input type="search" id="att-search" data-i18n-placeholder="common.search">
+        </label>
+      </div>
+      <div class="toolbar">
+        <label class="field">
+          <span data-i18n="attendance.day"></span>
+          <select id="att-fill-day"></select>
+        </label>
+        <button type="button" id="att-fill" class="btn primary" data-i18n="attendance.fillPresent"></button>
+        <div class="export-buttons push-right">
+          <button type="button" id="att-export-pdf" class="btn" data-i18n="common.exportPdf"></button>
+          <button type="button" id="att-export-xlsx" class="btn" data-i18n="common.exportExcel"></button>
+        </div>
+      </div>
+      <h2 id="att-month-title" class="month-title"></h2>
+      <p id="att-legend" class="legend"></p>
+      <div class="sheet-wrap">
+        <table id="att-sheet" class="sheet"></table>
+      </div>
+    </section>
+
+    <section id="view-people" class="view" role="tabpanel" hidden>
+      <form id="person-form" class="toolbar">
+        <input id="person-matricule" class="w-sm" maxlength="30" data-i18n-placeholder="people.matriculePlaceholder" data-i18n-aria-label="common.matricule">
+        <input id="person-name" class="grow" maxlength="100" required data-i18n-placeholder="people.namePlaceholder" data-i18n-aria-label="common.name">
+        <input id="person-job" maxlength="80" list="job-options" data-i18n-placeholder="people.jobTitlePlaceholder" data-i18n-aria-label="common.jobTitle">
+        <input id="person-service" maxlength="80" list="service-options" data-i18n-placeholder="people.servicePlaceholder" data-i18n-aria-label="common.service">
+        <button type="submit" class="btn primary" data-i18n="people.add"></button>
+      </form>
+      <datalist id="job-options"></datalist>
+      <datalist id="service-options"></datalist>
+      <p id="people-count" class="subtle"></p>
+      <div class="table-wrap">
+        <table id="people-table" class="data-table"></table>
+      </div>
+    </section>
+
+    <section id="view-stats" class="view" role="tabpanel" hidden>
+      <div class="toolbar">
+        <label class="field">
+          <span data-i18n="stats.from"></span>
+          <input type="date" id="stats-from" required>
+        </label>
+        <label class="field">
+          <span data-i18n="stats.to"></span>
+          <input type="date" id="stats-to" required>
+        </label>
+        <label class="field">
+          <span data-i18n="common.service"></span>
+          <select id="stats-service"></select>
+        </label>
+        <div class="export-buttons push-right">
+          <button type="button" id="stats-export-pdf" class="btn" data-i18n="common.exportPdf"></button>
+          <button type="button" id="stats-export-xlsx" class="btn" data-i18n="common.exportExcel"></button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="stats-table" class="data-table"></table>
+      </div>
+      <p class="subtle" data-i18n="stats.rateHelp"></p>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
