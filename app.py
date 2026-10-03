@@ -20,10 +20,10 @@ PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
 
 
 def load_secret_key():
-    """SECRET_KEY from the environment, otherwise a random key kept next to the database."""
+    """SECRET_KEY from the environment or .env, otherwise a random key kept in the data folder."""
     if os.environ.get("SECRET_KEY"):
         return os.environ["SECRET_KEY"]
-    key_file = db.DB_FILE.parent / "secret_key"
+    key_file = db.DATA_DIR / "secret_key"
     if not key_file.exists():
         key_file.write_text(secrets.token_hex(32), encoding="utf-8")
     return key_file.read_text(encoding="utf-8").strip()

@@ -20,6 +20,17 @@ Créez ensuite un compte de connexion (voir plus bas), puis ouvrez <http://local
 - `PORT=8080 python app.py` change le port.
 - Les données sont enregistrées dans `data/attendance.db`. Pour sauvegarder, copiez ce fichier.
 
+## Base de données : SQLite ou MySQL
+
+Par défaut, l'application utilise **SQLite** (`data/attendance.db`) : il n'y a rien à configurer.
+
+Pour utiliser **MySQL**, copiez `.env.example` sous le nom `.env` et renseignez `MYSQL_DB`, `MYSQL_USER`, `MYSQL_PASSWORD` et `MYSQL_HOST`. Les tables sont créées automatiquement au démarrage. Le fichier `.env` est lu à la fois par le site et par les commandes en console, et il n'est jamais envoyé sur GitHub.
+
+```bash
+python db.py check          # teste toutes les opérations sur la base configurée, puis nettoie
+python sqlite_to_mysql.py   # copie les données de data/attendance.db vers MySQL (base MySQL vide uniquement)
+```
+
 ## Comptes de connexion
 
 L'application est protégée par un identifiant et un mot de passe. Pour que personne ne puisse s'inscrire depuis Internet, les comptes se créent uniquement en ligne de commande, dans le dossier du projet avec l'environnement virtuel activé :
@@ -109,8 +120,10 @@ Si aucune police n'est trouvée, le chinois utilise la police Adobe intégrée `
 
 ```
 app.py            Serveur Flask : API REST, connexion et pages de l'interface
-db.py             Base SQLite
+db.py             Base de données (SQLite ou MySQL) et autotest
 users.py          Gestion des comptes de connexion (ligne de commande)
+sqlite_to_mysql.py  Transfert des données de SQLite vers MySQL
+.env.example      Modèle de configuration (MySQL, HTTPS)
 exports.py        Génération des fichiers PDF (ReportLab) et Excel (openpyxl)
 requirements.txt  Dépendances Python
 public/
